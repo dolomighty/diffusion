@@ -63,8 +63,7 @@ void render( SDL_Event event ){  // HEADER
 
             float rho = 
                 P(x,y)[0]+
-                P(x,y)[1]+
-                P(x,y)[2];
+                P(x,y)[1];
 
             // kernel quasi-gauss 
             // somma 16
@@ -76,21 +75,17 @@ void render( SDL_Event event ){  // HEADER
                 1*P(x-1,y-1)[1]+2*P(x+0,y-1)[1]+1*P(x+1,y-1)[1]+
                 2*P(x-1,y+0)[1]+4*P(x+0,y+0)[1]+2*P(x+1,y+0)[1]+
                 1*P(x-1,y+1)[1]+2*P(x+0,y+1)[1]+1*P(x+1,y+1)[1],
-
-                1*P(x-1,y-1)[2]+2*P(x+0,y-1)[2]+1*P(x+1,y-1)[2]+
-                2*P(x-1,y+0)[2]+4*P(x+0,y+0)[2]+2*P(x+1,y+0)[2]+
-                1*P(x-1,y+1)[2]+2*P(x+0,y+1)[2]+1*P(x+1,y+1)[2],
             };
 
             N(x,y)[0] = P(x,y)[0] + 0.01*(avg[0]*0.1 + P(x,y)[0]*(1-rho-P(x,y)[1]*0.75));
-            N(x,y)[1] = P(x,y)[1] + 0.01*(avg[1]*0.1 + P(x,y)[1]*(1-rho-P(x,y)[2]*0.75));
-            N(x,y)[2] = P(x,y)[2] + 0.01*(avg[2]*0.1 + P(x,y)[2]*(1-rho-P(x,y)[0]*0.75));
+            N(x,y)[1] = P(x,y)[1] + 0.01*(avg[1]*0.1 + P(x,y)[1]*(1-rho-P(x,y)[0]*0.75));
 
             RGB8[y][x][0] = remap(N(x,y)[0]);
             RGB8[y][x][1] = remap(N(x,y)[1]);
-            RGB8[y][x][2] = remap(N(x,y)[2]);
+            RGB8[y][x][2] = 0;
         }
     }
+
 
     SDL_UpdateTexture( framebuffer , NULL, RGB8, SIZE*sizeof(RGB8[0][0]));
     SDL_RenderCopy( renderer, framebuffer , NULL , NULL );

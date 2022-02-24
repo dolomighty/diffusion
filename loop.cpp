@@ -1,13 +1,15 @@
 
+
 #include <SDL2/SDL.h>   // HEADER
 #include "render.h"
+#include "global.h"
 
-int frame = 0;  // HEADER
 
 
 void loop( SDL_Renderer *renderer ){    // HEADER
 
-    data_init();
+    frame = 0;
+    init();
 
     while(1){
         
@@ -53,7 +55,7 @@ void loop( SDL_Renderer *renderer ){    // HEADER
             }
         }
 
-        render( event );
+        render();
         frame++;
 
         SDL_RenderPresent(renderer);

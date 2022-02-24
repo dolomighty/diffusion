@@ -12,11 +12,16 @@ DIR:=$(shell find -L -mindepth 1 -type d -printf "-I %P ")
 
 
 CC=g++
-LIBS  = `pkg-config --libs   sdl2` -lm   
-CFLAGS= `pkg-config --cflags sdl2` -Werror -fopenmp $(DIR)
+LIBS  = `pkg-config --libs   sdl2` -lm     $(OPENMP)
+CFLAGS= `pkg-config --cflags sdl2` -Werror $(OPENMP) $(DIR)
+CPPFLAGS=$(CFLAGS)
 
 # optim
 CFLAGS+=-O3
+
+# parallel for
+#OPENMP=-fopenmp
+
 
 
 .PHONY : all
@@ -31,9 +36,11 @@ run : main
 OBS+=main.o
 OBS+=loop.o
 OBS+=render.o
+OBS+=gauss.o
+OBS+=global.o
 #main.o : $(SRC) $(HDR)
 
-$(OBS) : $(SRC) $(HDR)
+$(OBS) : Makefile $(SRC) $(HDR)
 
 
 main : Makefile $(OBS)

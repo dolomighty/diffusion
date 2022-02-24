@@ -36,7 +36,6 @@ run : main
 OBS+=main.o
 OBS+=loop.o
 OBS+=render.o
-OBS+=gauss.o
 OBS+=global.o
 #main.o : $(SRC) $(HDR)
 

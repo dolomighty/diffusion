@@ -1,18 +1,16 @@
 
 #include <SDL2/SDL.h>
 #include <stdint.h>
-#include "gauss.h"
 #include "global.h"
 #include <time.h>
 
 
 
-// 3 componenti per griglia
-static GRID grid[3];
 
-// grid addressing
-#define P(X,Y,C) grid[C].G[Y][X]
-#define G(X,Y,C) gau[C].G[Y][X]
+static GRID con[3];     // 3 "reagenti"
+
+// C sta per concentrazione dei reagenti
+#define C(X,Y,C) con[C].G[Y][X]
 
 
 
@@ -22,25 +20,26 @@ static GRID grid[3];
 
 void init(){   // HEADER
 
+    bzero( &con, sizeof(con));
+
     srand(time(0));
 
 //#pragma omp parallel for
 //    for( int y=0; y<GRIDH; y++ ){
 //        for( int x=0; x<GRIDW; x++ ){
-//            P(x,y,0) = rand()*1.0/RAND_MAX;
-//            P(x,y,1) = rand()*1.0/RAND_MAX;
-//            P(x,y,2) = rand()*1.0/RAND_MAX;
+//            C(x,y,0) = rand()*1.0/RAND_MAX;
+//            C(x,y,1) = rand()*1.0/RAND_MAX;
+//            C(x,y,2) = rand()*1.0/RAND_MAX;
 //        }
 //    }
 
-    bzero( &grid, sizeof(grid));
 
 #pragma omp parallel for
     for( int i=100; i>0; i-- ){
         int x = rand()&(GRIDW-1);
         int y = rand()&(GRIDH-1);
         int c = rand()%3;
-        P(x,y,c) = rand()*1.0/RAND_MAX;
+        C(x,y,c) = rand()*1.0/RAND_MAX;
     }
 }
 
@@ -82,10 +81,26 @@ void render(){  // HEADER
 
     uint8_t RGB8[GRIDH][GRIDW][3];
 
-    GRID gau[3];
-    gauss_blur( gau[0], grid[0]);
-    gauss_blur( gau[1], grid[1]);
-    gauss_blur( gau[2], grid[2]);
+    // op laplaciano 2D
+    // https://en.wikipedia.org/wiki/Discrete_Laplace_operator
+    // "Implementation via operator discretization"
+
+    GRID lapla[3];
+
+
+#pragma omp parallel for
+    for( int y=0; y<GRIDH; y++ ){
+        for( int x=0; x<GRIDW; x++ ){
+
+#define W(X,Y,C) con[C].G[(Y)&(GRIDH-1)][(X)&(GRIDW-1)]
+
+            lapla[0].G[y][x]= W(x-1,y,0)+W(x+1,y,0)+W(x,y-1,0)+W(x,y+1,0)-4*W(x,y,0);
+            lapla[1].G[y][x]= W(x-1,y,1)+W(x+1,y,1)+W(x,y-1,1)+W(x,y+1,1)-4*W(x,y,1);
+            lapla[2].G[y][x]= W(x-1,y,2)+W(x+1,y,2)+W(x,y-1,2)+W(x,y+1,2)-4*W(x,y,2);
+        }
+    }
+
+
 
 
 #pragma omp parallel for
@@ -93,30 +108,38 @@ void render(){  // HEADER
         for( int x=0; x<GRIDW; x++ ){
 
             float rho =
-                P(x,y,0)+
-                P(x,y,1)+
-                P(x,y,2)+
+                C(x,y,0)+
+                C(x,y,1)+
+                C(x,y,2)+
                 0;
 
             float one_minus_rho = 1 - rho;
 
-//            RGB8[y][x][0]=
-//            RGB8[y][x][1]=
-//            RGB8[y][x][2]=remap_u8(one_minus_rho*3);
+#define L(X,Y,C) lapla[C].G[Y][X]
 
-            float P0 = P(x,y,0) + DT*(G(x,y,0)*0.1 + P(x,y,0)*(one_minus_rho-P(x,y,1)*0.9));
-            float P1 = P(x,y,1) + DT*(G(x,y,1)*0.1 + P(x,y,1)*(one_minus_rho-P(x,y,2)*0.9));
-            float P2 = P(x,y,2) + DT*(G(x,y,2)*0.1 + P(x,y,2)*(one_minus_rho-P(x,y,0)*0.9));
+            float N0 = C(x,y,0) + DT*(L(x,y,0)*0.1 + C(x,y,0)*(one_minus_rho-C(x,y,1)*0.5));
+            float N1 = C(x,y,1) + DT*(L(x,y,1)*0.1 + C(x,y,1)*(one_minus_rho-C(x,y,2)*0.5));
+            float N2 = C(x,y,2) + DT*(L(x,y,2)*0.1 + C(x,y,2)*(one_minus_rho-C(x,y,0)*0.5));
 
-            P(x,y,0) = P0;
-            P(x,y,1) = P1;
-            P(x,y,2) = P2;
+            C(x,y,0) = N0;
+            C(x,y,1) = N1;
+            C(x,y,2) = N2;
 
             float rgb[3]={0};
 
-            colorize( rgb, P(x,y,0), 1.0, 0.2, 0.2 );
-            colorize( rgb, P(x,y,1), 0.2, 0.2, 1.0 );
-            colorize( rgb, P(x,y,2), 1.0, 1.0, 1.0 );
+//            // w
+//            colorize( rgb, C(x,y,0), 1, 1, 1 );
+//            colorize( rgb, C(x,y,1), 1, 1, 1 );
+//            colorize( rgb, C(x,y,2), 0, 0, 0 );
+
+            // r b w
+            colorize( rgb, C(x,y,0), 1.0, 1.0, 1.0 );
+            colorize( rgb, C(x,y,1), 0.2, 0.2, 1.0 );
+            colorize( rgb, C(x,y,2), 1.0, 0.2, 0.2 );
+
+//            rgb[0]=one_minus_rho*3;
+//            rgb[1]=one_minus_rho*3;
+//            rgb[2]=one_minus_rho*3;
 
             RGB8[y][x][0]=remap_u8(rgb[0]);
             RGB8[y][x][1]=remap_u8(rgb[1]);
@@ -128,36 +151,6 @@ void render(){  // HEADER
     SDL_RenderCopy( renderer, framebuffer_tex , NULL , NULL );
 }
 
-
-
-
-//void render(){  // HEADER
-//
-//    uint8_t RGB8[SIZE][SIZE][3];
-//
-//    GRID gau[3];
-//    gauss_blur( gau[0], grid[1][0]);
-//    gauss_blur( gau[1], grid[1][1]);
-//    gauss_blur( gau[2], grid[1][2]);
-//
-//#pragma omp parallel for
-//    for( int y=0; y<SIZE; y++ ){
-//        for( int x=0; x<SIZE; x++ ){
-//            if(frame&128){
-//                RGB8[y][x][0] = remap_u8(G(x,y,0));
-//                RGB8[y][x][1] = remap_u8(G(x,y,1));
-//                RGB8[y][x][2] = remap_u8(G(x,y,2));
-//            }else{
-//                RGB8[y][x][0] = remap_u8(grid[1][0].G[y][x]);
-//                RGB8[y][x][1] = remap_u8(grid[1][1].G[y][x]);
-//                RGB8[y][x][2] = remap_u8(grid[1][2].G[y][x]);
-//            }
-//        }
-//    }
-//
-//    SDL_UpdateTexture( framebuffer_tex , NULL, RGB8, GRIDW*sizeof(RGB8[0][0]));
-//    SDL_RenderCopy( renderer, framebuffer_tex , NULL , NULL );
-//}
 
 
 
@@ -186,4 +179,5 @@ simpler cellular automata with similar properties, see for instance
 
 
 */
+
 

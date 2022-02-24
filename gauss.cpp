@@ -4,7 +4,6 @@
 #include <numeric>
 
 
-#define COUNT(ARR) (sizeof(ARR)/sizeof(ARR[0]))
 #define WRAP(X,Y) G[(Y)&(GRIDH-1)][(X)&(GRIDW-1)]
 
 
@@ -22,19 +21,17 @@ void gauss_blur( GRID &out, const GRID &in ){   // HEADER
     // il kernel è simmetrico
     // quindi servon solo meta dei valori
     // math.exp(-9*9*0.05)= 0.017422374639493515
-    // math.exp(-9*9*0.1)= 0.0003035391380788668
-    // math.exp(-5*5*0.1)= 0.0820849986238988
-    constexpr float kernel[]={
-        gauss( 0, 0.2 ),
-        gauss( 1, 0.2 ),
-        gauss( 2, 0.2 ),
-        gauss( 3, 0.2 ),
-        gauss( 4, 0.2 ),
-        gauss( 5, 0.2 ),
-//        gauss( 6, 0.1 ),
-//        gauss( 7, 0.1 ),
-//        gauss( 8, 0.1 ),
-//        gauss( 9, 0.1 ),
+    constexpr float kernel[10]={
+        gauss( 0, 0.05 ),
+        gauss( 1, 0.05 ),
+        gauss( 2, 0.05 ),
+        gauss( 3, 0.05 ),
+        gauss( 4, 0.05 ),
+        gauss( 5, 0.05 ),
+        gauss( 6, 0.05 ),
+        gauss( 7, 0.05 ),
+        gauss( 8, 0.05 ),
+        gauss( 9, 0.05 ),
     };
 
     constexpr float one_over_sum = 1/pow(
@@ -44,11 +41,11 @@ void gauss_blur( GRID &out, const GRID &in ){   // HEADER
             kernel[3]+
             kernel[4]+
             kernel[5]+
-//            kernel[6]+
-//            kernel[7]+
-//            kernel[8]+
-//            kernel[9]+
-            0), 2  // squared
+            kernel[6]+
+            kernel[7]+
+            kernel[8]+
+            kernel[9]
+        ), 2  // squared
     );
 
 
@@ -59,10 +56,10 @@ void gauss_blur( GRID &out, const GRID &in ){   // HEADER
     for( int y=0; y<GRIDH; y++ ){
         for( int x=0; x<GRIDW; x++ ){
             tmp.G[y][x]=
-//                kernel[9]*in.WRAP(x,y-9)+
-//                kernel[8]*in.WRAP(x,y-8)+
-//                kernel[7]*in.WRAP(x,y-7)+
-//                kernel[6]*in.WRAP(x,y-6)+
+                kernel[9]*in.WRAP(x,y-9)+
+                kernel[8]*in.WRAP(x,y-8)+
+                kernel[7]*in.WRAP(x,y-7)+
+                kernel[6]*in.WRAP(x,y-6)+
                 kernel[5]*in.WRAP(x,y-5)+
                 kernel[4]*in.WRAP(x,y-4)+
                 kernel[3]*in.WRAP(x,y-3)+
@@ -74,11 +71,10 @@ void gauss_blur( GRID &out, const GRID &in ){   // HEADER
                 kernel[3]*in.WRAP(x,y+3)+
                 kernel[4]*in.WRAP(x,y+4)+
                 kernel[5]*in.WRAP(x,y+5)+
-//                kernel[6]*in.WRAP(x,y+6)+
-//                kernel[7]*in.WRAP(x,y+7)+
-//                kernel[8]*in.WRAP(x,y+8)+
-//                kernel[9]*in.WRAP(x,y+9)+
-                0;
+                kernel[6]*in.WRAP(x,y+6)+
+                kernel[7]*in.WRAP(x,y+7)+
+                kernel[8]*in.WRAP(x,y+8)+
+                kernel[9]*in.WRAP(x,y+9);
         }
     }
 
@@ -87,10 +83,10 @@ void gauss_blur( GRID &out, const GRID &in ){   // HEADER
     for( int x=0; x<GRIDW; x++ ){
         for( int y=0; y<GRIDH; y++ ){
             out.G[y][x] =
-//                kernel[9]*tmp.WRAP(x-9,y)+
-//                kernel[8]*tmp.WRAP(x-8,y)+
-//                kernel[7]*tmp.WRAP(x-7,y)+
-//                kernel[6]*tmp.WRAP(x-6,y)+
+                kernel[9]*tmp.WRAP(x-9,y)+
+                kernel[8]*tmp.WRAP(x-8,y)+
+                kernel[7]*tmp.WRAP(x-7,y)+
+                kernel[6]*tmp.WRAP(x-6,y)+
                 kernel[5]*tmp.WRAP(x-5,y)+
                 kernel[4]*tmp.WRAP(x-4,y)+
                 kernel[3]*tmp.WRAP(x-3,y)+
@@ -102,11 +98,10 @@ void gauss_blur( GRID &out, const GRID &in ){   // HEADER
                 kernel[3]*tmp.WRAP(x+3,y)+
                 kernel[4]*tmp.WRAP(x+4,y)+
                 kernel[5]*tmp.WRAP(x+5,y)+
-//                kernel[6]*tmp.WRAP(x+6,y)+
-//                kernel[7]*tmp.WRAP(x+7,y)+
-//                kernel[8]*tmp.WRAP(x+8,y)+
-//                kernel[9]*tmp.WRAP(x+9,y)+
-                0;
+                kernel[6]*tmp.WRAP(x+6,y)+
+                kernel[7]*tmp.WRAP(x+7,y)+
+                kernel[8]*tmp.WRAP(x+8,y)+
+                kernel[9]*tmp.WRAP(x+9,y);
                 
             out.G[y][x] *= one_over_sum;
         }

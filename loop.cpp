@@ -3,7 +3,8 @@
 #include <SDL2/SDL.h>   // HEADER
 #include "render.h"
 #include "global.h"
-
+#include <stdint.h>
+#include <time.h>
 
 
 void loop( SDL_Renderer *renderer ){    // HEADER
@@ -55,7 +56,15 @@ void loop( SDL_Renderer *renderer ){    // HEADER
             }
         }
 
+        struct timespec start, end;
+        clock_gettime(CLOCK_REALTIME, &start);
+
         render();
+
+        clock_gettime(CLOCK_REALTIME, &end);
+        float lap = (end.tv_sec-start.tv_sec)+(end.tv_nsec-start.tv_nsec)*1E-9;
+        fprintf(stderr,"lap %.4f secs\n",lap);
+
         frame++;
 
         SDL_RenderPresent(renderer);

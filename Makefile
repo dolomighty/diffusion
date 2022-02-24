@@ -21,6 +21,7 @@ CFLAGS+=-O3
 
 # parallel for
 #OPENMP=-fopenmp
+OPENMP=
 
 
 

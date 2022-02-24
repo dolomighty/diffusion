@@ -7,8 +7,7 @@
 
 
 
-// 3 componenti per griglia
-static GRID grid[3];
+static GRID grid[5];
 
 // grid addressing
 #define P(X,Y,C) grid[C].G[Y][X]
@@ -39,7 +38,7 @@ void init(){   // HEADER
     for( int i=100; i>0; i-- ){
         int x = rand()&(GRIDW-1);
         int y = rand()&(GRIDH-1);
-        int c = rand()%3;
+        int c = rand()%COUNT(grid);
         P(x,y,c) = rand()*1.0/RAND_MAX;
     }
 }
@@ -82,41 +81,47 @@ void render(){  // HEADER
 
     uint8_t RGB8[GRIDH][GRIDW][3];
 
-    GRID gau[3];
+    GRID gau[5];
     gauss_blur( gau[0], grid[0]);
     gauss_blur( gau[1], grid[1]);
     gauss_blur( gau[2], grid[2]);
+    gauss_blur( gau[3], grid[3]);
+    gauss_blur( gau[4], grid[4]);
 
 
 #pragma omp parallel for
     for( int y=0; y<GRIDH; y++ ){
         for( int x=0; x<GRIDW; x++ ){
 
-            float rho =
+            float one_minus_rho = 1 - (
                 P(x,y,0)+
                 P(x,y,1)+
                 P(x,y,2)+
-                0;
+                P(x,y,3)+
+                P(x,y,4)
+            );
 
-            float one_minus_rho = 1 - rho;
 
-//            RGB8[y][x][0]=
-//            RGB8[y][x][1]=
-//            RGB8[y][x][2]=remap_u8(one_minus_rho*3);
-
-            float P0 = P(x,y,0) + DT*(G(x,y,0)*0.1 + P(x,y,0)*(one_minus_rho-P(x,y,1)*0.9));
-            float P1 = P(x,y,1) + DT*(G(x,y,1)*0.1 + P(x,y,1)*(one_minus_rho-P(x,y,2)*0.9));
-            float P2 = P(x,y,2) + DT*(G(x,y,2)*0.1 + P(x,y,2)*(one_minus_rho-P(x,y,0)*0.9));
-
+            float P0 = P(x,y,0) + DT*(G(x,y,0)*0.1 + P(x,y,0)*(one_minus_rho-P(x,y,1)*0.75));
+            P(x,y,1) = P(x,y,1) + DT*(G(x,y,1)*0.1 + P(x,y,1)*(one_minus_rho-P(x,y,2)*0.75));
+            P(x,y,2) = P(x,y,2) + DT*(G(x,y,2)*0.1 + P(x,y,2)*(one_minus_rho-P(x,y,3)*0.75));
+            P(x,y,3) = P(x,y,3) + DT*(G(x,y,3)*0.1 + P(x,y,3)*(one_minus_rho-P(x,y,4)*0.75));
+            P(x,y,4) = P(x,y,4) + DT*(G(x,y,4)*0.1 + P(x,y,4)*(one_minus_rho-P(x,y,0)*0.75));
             P(x,y,0) = P0;
-            P(x,y,1) = P1;
-            P(x,y,2) = P2;
 
             float rgb[3]={0};
 
-            colorize( rgb, P(x,y,0), 1.0, 0.2, 0.2 );
-            colorize( rgb, P(x,y,1), 0.2, 0.2, 1.0 );
-            colorize( rgb, P(x,y,2), 1.0, 1.0, 1.0 );
+//            colorize( rgb, P(x,y,0), 1,0,0 );
+//            colorize( rgb, P(x,y,1), 0,0,1 );
+//            colorize( rgb, P(x,y,2), 1,1,0 );
+//            colorize( rgb, P(x,y,3), 1,0,1 );
+//            colorize( rgb, P(x,y,4), 0,1,0 );
+
+            colorize( rgb, P(x,y,0), 1,0,0 );
+            colorize( rgb, P(x,y,1), 0,0,1 );
+            colorize( rgb, P(x,y,2), 1,1,1 );
+//            colorize( rgb, P(x,y,3), 1,0,1 );
+//            colorize( rgb, P(x,y,4), 0,1,0 );
 
             RGB8[y][x][0]=remap_u8(rgb[0]);
             RGB8[y][x][1]=remap_u8(rgb[1]);

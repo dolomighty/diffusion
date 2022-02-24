@@ -1,6 +1,8 @@
 
 #include <SDL2/SDL.h>   // HEADER
 
+#define COUNT(ARR) (sizeof(ARR)/sizeof(ARR[0]))     // HEADER
+
 SDL_Texture  *framebuffer_tex;  // HEADER
 SDL_Renderer *renderer; // HEADER
 

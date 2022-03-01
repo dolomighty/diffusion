@@ -89,17 +89,46 @@ void render(){  // HEADER
     GRID lapla[3];
 
 
+#undef W
+#define W(X,Y,C) con[C].G[(Y)&(GRIDH-1)][(X)&(GRIDW-1)]
+
+
 #pragma omp parallel for
     for( int y=0; y<GRIDH; y++ ){
         for( int x=0; x<GRIDW; x++ ){
-
-#define W(X,Y,C) con[C].G[(Y)&(GRIDH-1)][(X)&(GRIDW-1)]
-
-            lapla[0].G[y][x]= W(x-1,y,0)+W(x+1,y,0)+W(x,y-1,0)+W(x,y+1,0)-4*W(x,y,0);
-            lapla[1].G[y][x]= W(x-1,y,1)+W(x+1,y,1)+W(x,y-1,1)+W(x,y+1,1)-4*W(x,y,1);
-            lapla[2].G[y][x]= W(x-1,y,2)+W(x+1,y,2)+W(x,y-1,2)+W(x,y+1,2)-4*W(x,y,2);
+            lapla[0].G[y][x]=W(x-1,y,0)+W(x+1,y,0)+W(x,y-1,0)+W(x,y+1,0)-4*W(x,y,0);
+            lapla[1].G[y][x]=W(x-1,y,1)+W(x+1,y,1)+W(x,y-1,1)+W(x,y+1,1)-4*W(x,y,1);
+            lapla[2].G[y][x]=W(x-1,y,2)+W(x+1,y,2)+W(x,y-1,2)+W(x,y+1,2)-4*W(x,y,2);
         }
     }
+// mul = W*H*3
+// add = W*H*12
+
+//    GRID tmp[3];
+//
+//// il kernel laplaciano non è separabile (distributiva per la molt.)
+//// però è distributiva per l'addiz.
+//// tuttavia, risulta in più calcoli
+//#pragma omp parallel for
+//    for( int y=0; y<GRIDH; y++ ){
+//        for( int x=0; x<GRIDW; x++ ){
+//            lapla[0].G[y][x]=W(x,y-1,0)+W(x,y+1,0)-2*W(x,y,0);
+//            lapla[1].G[y][x]=W(x,y-1,1)+W(x,y+1,1)-2*W(x,y,1);
+//            lapla[2].G[y][x]=W(x,y-1,2)+W(x,y+1,2)-2*W(x,y,2);
+//        }
+//    }
+//
+//#pragma omp parallel for
+//    for( int x=0; x<GRIDW; x++ ){
+//        for( int y=0; y<GRIDH; y++ ){
+//            lapla[0].G[y][x]+=W(x-1,y,0)+W(x+1,y,0)-2*W(x,y,0);
+//            lapla[1].G[y][x]+=W(x-1,y,1)+W(x+1,y,1)-2*W(x,y,1);
+//            lapla[2].G[y][x]+=W(x-1,y,2)+W(x+1,y,2)-2*W(x,y,2);
+//        }
+//    }
+//// mul = W*H*6
+//// add = W*H*15
+
 
 
 
@@ -135,7 +164,7 @@ void render(){  // HEADER
 
             // r b w
             colorize( rgb, C(x,y,0), 1.0, 1.0, 1.0 );
-            colorize( rgb, C(x,y,1), 0.2, 0.2, 1.0 );
+            colorize( rgb, C(x,y,1), 0.2, 1.0, 0.2 );
             colorize( rgb, C(x,y,2), 1.0, 0.2, 0.2 );
 
 //            rgb[0]=one_minus_rho*3;
